@@ -15,6 +15,7 @@ class VRButton{
 
 	constructor( renderer ) 
     {
+        console.log("11")
         this.renderer = renderer;   
         // Check there is an xr component of the navigator
         if ( 'xr' in navigator ) 
@@ -75,7 +76,7 @@ class VRButton{
 
         button.onmouseenter = function () {            
             button.style.fontSize = '12px'; 
-            button.textContent = (currentSession===null) ? 'ENTER VR' : 'EXIT VR';
+            button.textContent = (currentSession === null) ? 'ENTER VR' : 'EXIT VR';
             button.style.opacity = '1.0';
         };
 
@@ -124,6 +125,7 @@ class VRButton{
             else
             {
                 currentSession.end()
+                console.log('session started from null = null ')
             }
         }
     }
