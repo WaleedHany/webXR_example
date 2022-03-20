@@ -98,6 +98,7 @@ class VRButton{
             button.textContent = 'EXIT VR'
             // store session variable
             currentSession = session
+            console.log('session started')
         }
 
         function onSessionEnded(session)
@@ -118,6 +119,7 @@ class VRButton{
                 // define an init object
                 const sessionInit = {optionalFeatures:['local-floor', 'bounded-floor']}
                 navigator.xr.requestSession('immersive-vr', sessionInit).then(onSessionStarted)
+                console.log('session started from null ')
             }
             else
             {
