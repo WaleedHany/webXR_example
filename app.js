@@ -1,5 +1,5 @@
 import * as THREE from './libs/three/three.module.js';
-import { VRButton } from './libs/three/jsm/VRButton.js';
+import { VRButton } from './VRButton.js'// './libs/three/jsm/VRButton.js';
 import { XRControllerModelFactory } from './libs/three/jsm/XRControllerModelFactory.js';
 import { BoxLineGeometry } from './libs/three/jsm/BoxLineGeometry.js';
 import { Stats } from './libs/stats.module.js';
@@ -40,7 +40,7 @@ class App{
         container.appendChild( this.stats.dom );
         
         this.initScene();
-        this.setupXR();
+        this.setupVR();
         
         window.addEventListener('resize', this.resize.bind(this) );
 
@@ -82,11 +82,10 @@ class App{
 
             this.room.add( object );
         }
-
     }
     
     // Set up webXR library
-    setupXR()
+    setupVR()
     {
         this.renderer.xr.enabled = true;
         //document.body.appendChild( VRButton.createButton( this.renderer ) )
@@ -99,9 +98,9 @@ class App{
         this.renderer.setSize( window.innerWidth, window.innerHeight );  
     }
     
-	render( ) {   
-        this.stats.update();
-        
+	render( ) 
+    {   
+        this.stats.update();       
         this.renderer.render( this.scene, this.camera );
     }
 }
