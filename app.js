@@ -45,7 +45,7 @@ class App{
         
         this.initScene();
         this.setupXR();
-        
+        // when resize
         window.addEventListener('resize', this.resize.bind(this) )
 
         // adjust animation loop since we can't use our well known window.requestAnimationFrame() function.
