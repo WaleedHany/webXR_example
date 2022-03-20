@@ -22,7 +22,7 @@ class VRButton{
             const button = document.createElement('button')
             button.style.display = 'none'
             button.style.height = '40px'
-            document.body.appendChild(button)
+            
             // check that the type of session is supported
             navigator.xr.isSessionSupported('immersive-vr')
             .then((supported) => 
@@ -30,6 +30,7 @@ class VRButton{
                 // if supported, set the click event to request a xr session
                 supported? this.showEnterVR(button) : this.showWebXRNotFound(button)
             })
+            document.body.appendChild(button)
 		} 
         else // when xr is missing
         {
