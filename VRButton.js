@@ -15,7 +15,6 @@ class VRButton{
 
 	constructor( renderer ) 
     {
-        console.log("11")
         this.renderer = renderer;   
         // Check there is an xr component of the navigator
         if ( 'xr' in navigator ) 

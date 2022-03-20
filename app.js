@@ -1,9 +1,9 @@
-import * as THREE from './libs/three/three.module.js';
-import { VRButton } from './VRButton.js'// './libs/three/jsm/VRButton.js'
-import { XRControllerModelFactory } from './libs/three/jsm/XRControllerModelFactory.js';
-import { BoxLineGeometry } from './libs/three/jsm/BoxLineGeometry.js';
-import { Stats } from './libs/stats.module.js';
-import { OrbitControls } from './libs/three/jsm/OrbitControls.js';
+import * as THREE from '../../libs/three/three.module.js';
+import { VRButton } from '../../libs/VRButton.js';
+import { XRControllerModelFactory } from '../../libs/three/jsm/XRControllerModelFactory.js';
+import { BoxLineGeometry } from '../../libs/three/jsm/BoxLineGeometry.js';
+import { Stats } from '../../libs/stats.module.js';
+import { OrbitControls } from '../../libs/three/jsm/OrbitControls.js';
 
 
 class App{
@@ -37,12 +37,16 @@ class App{
         this.controls.update();
         
         this.stats = new Stats();
-        container.appendChild( this.stats.dom );
+        document.body.appendChild( this.stats.dom );
+        
+        this.raycaster = new THREE.Raycaster();
+        this.workingMatrix = new THREE.Matrix4();
+        this.workingVector = new THREE.Vector3();
         
         this.initScene();
-        this.setupVR();
+        this.setupXR();
         
-        window.addEventListener('resize', this.resize.bind(this) );
+        window.addEventListener('resize', this.resize.bind(this) )
 
         // adjust animation loop since we can't use our well known window.requestAnimationFrame() function.
         // For VR projects we use setAnimationLoop
@@ -58,11 +62,11 @@ class App{
     random( min, max ){
         return Math.random() * (max-min) + min;
     }
-    
+
     // Define meshs and scene components
     initScene(){
-         this.radius = 0.08;
-        // create a line box, rendered as line (not triangular faces)
+        this.radius = 0.08;
+         // create a line box, rendered as line (not triangular faces)
         this.room = new THREE.LineSegments(
 					new BoxLineGeometry( 6, 6, 6, 10, 10, 10 ),
 					new THREE.LineBasicMaterial( { color: 0x808080 } )
@@ -81,15 +85,22 @@ class App{
             object.position.z = this.random( -2, 2 );
 
             this.room.add( object );
+
         }
     }
-    
-    // Set up webXR library
-    setupVR()
-    {
+     // Set up webXR library
+    setupXR(){
         this.renderer.xr.enabled = true;
-        //document.body.appendChild( VRButton.createButton( this.renderer ) )
+        
         const button = new VRButton( this.renderer );
+    }
+    
+    buildControllers(){
+        
+    }
+    
+    handleController( controller ){
+        
     }
     
     resize(){
@@ -98,9 +109,16 @@ class App{
         this.renderer.setSize( window.innerWidth, window.innerHeight );  
     }
     
-	render( ) 
-    {   
-        this.stats.update();       
+	render( ) {   
+        this.stats.update();
+        
+        if (this.controllers ){
+            const self = this;
+            this.controllers.forEach( ( controller) => { 
+                self.handleController( controller ) 
+            });
+        }
+        
         this.renderer.render( this.scene, this.camera );
     }
 }
