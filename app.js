@@ -114,7 +114,7 @@ class App{
             controller.userData.selectPressed = false
             this.scene.add(controller)
 
-            controller.push(controller)
+            controllers.push(controller)
 
             const grip = this.renderer.xr.getControllerGrip(i)
             grip.add(controllerModelFactory.createControllerModel(grip))
