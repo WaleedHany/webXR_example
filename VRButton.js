@@ -15,6 +15,7 @@ class VRButton{
 
 	constructor( renderer ) 
     {
+        console.log("11")
         this.renderer = renderer;   
         // Check there is an xr component of the navigator
         if ( 'xr' in navigator ) 
@@ -90,7 +91,7 @@ class VRButton{
         function onSessionStarted(session)
         {
             // listen to session end
-            session.addEventListner('end', onSessionEnded)
+            session.addEventListener('end', onSessionEnded)
             // set the session
             self.renderer.xr.setSession(session)
             // modify button
@@ -98,7 +99,6 @@ class VRButton{
             button.textContent = 'EXIT VR'
             // store session variable
             currentSession = session
-            console.log('session started')
         }
 
         function onSessionEnded(session)
@@ -126,12 +126,10 @@ class VRButton{
 
                 var sessionInit = { optionalFeatures: [ 'local-floor', 'bounded-floor' ] };
                 navigator.xr.requestSession( 'immersive-vr', sessionInit ).then( onSessionStarted );
-                console.log('session started from null ')
             }
             else
             {
                 currentSession.end()
-                console.log('session started from null = null ')
             }
         }
     }
