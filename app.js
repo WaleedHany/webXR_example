@@ -7,7 +7,7 @@ import { ARButton } from './libs/ARButton.js';
 import {
 	Constants as MotionControllerConstants,
 	fetchProfile
-} from '../../libs/three/jsm/motion-controllers.module.js';
+} from './libs/three/jsm/motion-controllers.module.js';
 
 const DEFAULT_PROFILES_PATH = 'https://cdn.jsdelivr.net/npm/@webxr-input-profiles/assets@1.0/dist/profiles';
 const DEFAULT_PROFILE = 'generic-trigger';
