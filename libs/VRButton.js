@@ -5,49 +5,70 @@
  */
 
 class VRButton{
+    /**
+     * Accessing WebXR api
+     // Using three.js, we access xr via xr property of renderer (which is an instance of XRManager class)
+     // Web Xr is accessed by navigator object (navigator.xr) which is of type XRSystem interface & has two methods: 
+     // 1- is SessionSupported, 2- requestSession (If session SessionSupported returned' true, takes two parameters: sessionMode, sessionInit) 
+     */
 
+    /**
+    * Steps for creating button:
+    // 1- Check there is an xr component of the navigator
+    // 2- If xr exists check that the type of session is supported
+    // 3- If supported, set the click event to request a xr session
+    // 4- If we are currently in an xr session, then use session.end and a callback to end and update our app
+    // 5- If no xr component, check for secure browsing
+    // 6- If still no xr, display a website to provide advice 
+    */
+   
 	constructor( renderer, options ) {
         this.renderer = renderer;
         if (options !== undefined){
             this.onSessionStart = options.onSessionStart;
             this.onSessionEnd = options.onSessionEnd;
+            // define session init (used as parameter for requestSession)
             this.sessionInit = options.sessionInit;
+            // define session mode (used as parameter for requestSession)
             this.sessionMode = ( options.inline !== undefined && options.inline ) ? 'inline' : 'immersive-vr';
         }else{
             this.sessionMode = 'immersive-vr';
         }
         
        if (this.sessionInit === undefined ) this.sessionInit = { optionalFeatures: [ 'local-floor', 'bounded-floor' ] };
-        
+        // 1- Check there is an xr component of the navigator
         if ( 'xr' in navigator ) {
 
 			const button = document.createElement( 'button' );
 			button.style.display = 'none';
             button.style.height = '40px';
-            
+            // 2- If xr exists check that the type of session is supported
 			navigator.xr.isSessionSupported( this.sessionMode ).then( ( supported ) => {
-
+                // 3- If supported, set the click event to request a xr session
 				supported ? this.showEnterVR( button ) : this.showWebXRNotFound( button );
                 if (options && options.vrStatus) options.vrStatus( supported );
                 
 			} );
             
             document.body.appendChild( button );
-
-		} else {
-
+		} 
+        else // when xr is missing
+        { 
 			const message = document.createElement( 'a' );
-
+            // 5- If no xr component, check for secure browsing
+            // check if xr is missing because we are not using "https" (check for secure browsing)
 			if ( window.isSecureContext === false ) {
-
+                // message to say replace http with https
 				message.href = document.location.href.replace( /^http:/, 'https:' );
-				message.innerHTML = 'WEBXR NEEDS HTTPS'; 
-
-			} else {
-
+				message.innerHTML = 'WEBXR NEEDS HTTPS';        
+			} 
+            // 6- If still no xr, display a website to provide advice 
+            else 
+            {
+            // else we send a link 'https://immersiveweb.dev/' 
+            // to show user steps to take to make the page work correctly
 				message.href = 'https://immersiveweb.dev/';
 				message.innerHTML = 'WEBXR NOT AVAILABLE';
-
 			}
 
 			message.style.left = '0px';
@@ -64,43 +85,29 @@ class VRButton{
 
 		}
 
-    }
+    } // Constructor
 
-	showEnterVR( button ) {
-
+     // click event to request a xr session
+	showEnterVR( button ) 
+    {
         let currentSession = null;
-        const self = this;
-        
-        this.stylizeElement( button, true, 30, true );
-        
+        const self = this;      
+        this.stylizeElement( button, true, 30, true );       
         function onSessionStarted( session ) {
-
             session.addEventListener( 'end', onSessionEnded );
-
             self.renderer.xr.setSession( session );
-            self.stylizeElement( button, false, 12, true );
-            
+            self.stylizeElement( button, false, 12, true );            
             button.textContent = 'EXIT VR';
-
-            currentSession = session;
-            
+            currentSession = session;          
             if (self.onSessionStart !== undefined) self.onSessionStart();
-
         }
-
         function onSessionEnded( ) {
-
             currentSession.removeEventListener( 'end', onSessionEnded );
-
             self.stylizeElement( button, true, 12, true );
-            button.textContent = 'ENTER VR';
-
-            currentSession = null;
-            
+           button.textContent = 'ENTER VR';
+            currentSession = null;            
             if (self.onSessionEnd !== undefined) self.onSessionEnd();
-
         }
-
         //
 
         button.style.display = '';
@@ -108,28 +115,23 @@ class VRButton{
         button.style.width = '80px';
         button.style.cursor = 'pointer';
         button.innerHTML = '<i class="fas fa-vr-cardboard"></i>';
-        
-
+    
         button.onmouseenter = function () {
-            
             button.style.fontSize = '12px'; 
             button.textContent = (currentSession===null) ? 'ENTER VR' : 'EXIT VR';
             button.style.opacity = '1.0';
-
         };
 
-        button.onmouseleave = function () {
-            
+        button.onmouseleave = function () {      
             button.style.fontSize = '30px'; 
             button.innerHTML = '<i class="fas fa-vr-cardboard"></i>';
             button.style.opacity = '0.5';
-
         };
-
+        // 2- request session when button is clicked
         button.onclick = function () {
 
-            if ( currentSession === null ) {
-
+            if ( currentSession === null ) 
+            {
                 // WebXR's requestReferenceSpace only works if the corresponding feature
                 // was requested at session creation time. For simplicity, just ask for
                 // the interesting ones as optional features, but be aware that the
@@ -138,19 +140,16 @@ class VRButton{
                 // be requested separately.)
 
                 navigator.xr.requestSession( self.sessionMode, self.sessionInit ).then( onSessionStarted );
-
-            } else {
-
+            } 
+            else            
+            {
                 currentSession.end();
-
             }
-
         };
+    } // showEnterVR
 
-    }
 
     disableButton(button) {
-
         button.style.cursor = 'auto';
         button.style.opacity = '0.5';
         
@@ -158,7 +157,6 @@ class VRButton{
         button.onmouseleave = null;
 
         button.onclick = null;
-
     }
 
     showWebXRNotFound( button ) {

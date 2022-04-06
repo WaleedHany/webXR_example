@@ -1,50 +1,73 @@
+
 import * as THREE from './libs/three/three.module.js';
 import { GLTFLoader } from './libs/three/jsm/GLTFLoader.js';
+import { DRACOLoader } from './libs/three/jsm/DRACOLoader.js';
 import { RGBELoader } from './libs/three/jsm/RGBELoader.js';
-import { ARButton } from './libs/ARButton.js';
+import { Stats } from './libs/stats.module.js';
 import { LoadingBar } from './libs/LoadingBar.js';
-import { Player } from './libs/Player.js';
+import { VRButton } from './libs/VRButton.js';
+import { CanvasUI } from './libs/CanvasUI.js';
+import { XRControllerModelFactory } from './libs/three/jsm/XRControllerModelFactory.js';
 
 class App{
 	constructor(){
 		const container = document.createElement( 'div' );
 		document.body.appendChild( container );
-        
-        this.clock = new THREE.Clock();
-        
-        this.loadingBar = new LoadingBar();
 
 		this.assetsPath = './assets/';
         
-		this.camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.01, 20 );
-		this.camera.position.set( 0, 1.6, 3 );
+		this.camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.01, 500 );
+		this.camera.position.set( 0, 1.6, 0 );
+        
+        this.dolly = new THREE.Object3D(  );
+        this.dolly.position.set(0, 0, 10);
+        this.dolly.add( this.camera );
+        this.dummyCam = new THREE.Object3D();
+        this.camera.add( this.dummyCam );
         
 		this.scene = new THREE.Scene();
-
-		const ambient = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 2);
-        ambient.position.set( 0.5, 1, 0.25 );
-		this.scene.add(ambient);
+        this.scene.add( this.dolly );
         
-        const light = new THREE.DirectionalLight();
-        light.position.set( 0.2, 1, 1);
-        this.scene.add(light);
+		const ambient = new THREE.HemisphereLight(0xFFFFFF, 0xAAAAAA, 0.8);
+		this.scene.add(ambient);
 			
-		this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true } );
+		this.renderer = new THREE.WebGLRenderer({ antialias: true });
 		this.renderer.setPixelRatio( window.devicePixelRatio );
 		this.renderer.setSize( window.innerWidth, window.innerHeight );
 		this.renderer.outputEncoding = THREE.sRGBEncoding;
 		container.appendChild( this.renderer.domElement );
         this.setEnvironment();
+	
+        window.addEventListener( 'resize', this.resize.bind(this) );
         
+        this.clock = new THREE.Clock();
+        this.up = new THREE.Vector3(0,1,0);
+        this.origin = new THREE.Vector3();
         this.workingVec3 = new THREE.Vector3();
+        this.workingVec3b = new THREE.Vector3();
+        this.workingQuaternion = new THREE.Quaternion();
+        this.raycaster = new THREE.Raycaster();
         
-        this.initScene();
-        this.setupXR();
-		
-		window.addEventListener('resize', this.resize.bind(this));
+        this.stats = new Stats();
+		container.appendChild( this.stats.dom );
         
+		this.loadingBar = new LoadingBar();
+		// load colledge
+		this.loadCollege();
+        
+        const self = this;
+        // load json file
+        // fetch is used to load a file
+        fetch('./college.json')
+         // first promise returns an HTTP response, this is the jsom method that parses the json file
+        .then(response => response.json()) 
+         // second promise returns js objects from the json object
+        .then(obj =>{
+            self.boardShown = '';
+            self.boardData = obj;
+        });
 	}
-    
+	
     setEnvironment(){
         const loader = new RGBELoader().setDataType( THREE.UnsignedByteType );
         const pmremGenerator = new THREE.PMREMGenerator( this.renderer );
@@ -62,53 +85,56 @@ class App{
             console.error( 'An error occurred setting the environment');
         } );
     }
-	
-    resize(){ 
+    
+    resize(){
         this.camera.aspect = window.innerWidth / window.innerHeight;
-    	this.camera.updateProjectionMatrix();
-    	this.renderer.setSize( window.innerWidth, window.innerHeight );  
+        this.camera.updateProjectionMatrix();
+        this.renderer.setSize( window.innerWidth, window.innerHeight );  
     }
     
-    loadKnight()
-    {
-	    const loader = new GLTFLoader().setPath(this.assetsPath);
-		const self = this;
+	loadCollege(){
+        
+		const loader = new GLTFLoader( ).setPath(this.assetsPath);
+        const dracoLoader = new DRACOLoader();
+        dracoLoader.setDecoderPath( './libs/three/js/draco/' );
+        loader.setDRACOLoader( dracoLoader );
+        
+        const self = this;
 		
-		// Load a GLTF resource
+		// Load a glTF resource
 		loader.load(
 			// resource URL
-			`knight2.glb`,
+			'college.glb',
 			// called when the resource is loaded
 			function ( gltf ) {
-				const object = gltf.scene.children[5];
+
+                const college = gltf.scene.children[0];
+				self.scene.add( college );
 				
-				const options = {
-					object: object,
-					speed: 0.5,
-					assetsPath: self.assetsPath,
-					loader: loader,
-                    animations: gltf.animations,
-					clip: gltf.animations[0],
-					app: self,
-					name: 'knight',
-					npc: false
-				};
-				
-				self.knight = new Player(options);
-                self.knight.object.visible = false;
-				
-				self.knight.action = 'Dance';
-				const scale = 0.005;
-				self.knight.object.scale.set(scale, scale, scale); 
-				
+				college.traverse(function (child) {
+    				if (child.isMesh){
+						if (child.name.indexOf("PROXY")!=-1){
+							child.material.visible = false;
+							self.proxy = child;
+						}else if (child.material.name.indexOf('Glass')!=-1){
+                            child.material.opacity = 0.1;
+                            child.material.transparent = true;
+                        }else if (child.material.name.indexOf("SkyBox")!=-1){
+                            const mat1 = child.material;
+                            const mat2 = new THREE.MeshBasicMaterial({map: mat1.map});
+                            child.material = mat2;
+                            mat1.dispose();
+                        }
+					}
+				});
+                        
                 self.loadingBar.visible = false;
-                self.renderer.setAnimationLoop( self.render.bind(self) );
+			    
+                self.setupXR();
 			},
 			// called while loading is progressing
 			function ( xhr ) {
-
 				self.loadingBar.progress = (xhr.loaded / xhr.total);
-
 			},
 			// called when loading has errors
 			function ( error ) {
@@ -117,108 +143,204 @@ class App{
 
 			}
 		);
-	}		
-    
-    initScene()
-    {
-        this.loadKnight();
-        this.reticle = new THREE.Mesh(
-            new THREE.RingBufferGeometry(0.15, 0.2, 32).rotateX(-Math.PI/2),
-            new THREE.MeshBasicMaterial()
-        )
-        this.reticle.matrixAutoUpdate = false
-        this.reticle.visible = false
-        this.scene.add( this.reticle )
-    }
+	}
     
     setupXR(){
+        // enable xr
         this.renderer.xr.enabled = true;
-        
-        const btn = new ARButton( this.renderer, { sessionInit: { requiredFeatures: [ 'hit-test' ], optionalFeatures: [ 'dom-overlay' ], domOverlay: { root: document.body } } } );
+        // define button an XR session
+        const btn = new VRButton( this.renderer );
         
         const self = this;
-
-        this.hitTestSourceRequested = false;
-        this.hitTestSource = null;
         
-        function onSelect() 
-        {
-            if (self.knight===undefined) return;
+        function onSelectStart( event ) {
+            this.userData.selectPressed = true; 
+        }
+
+        function onSelectEnd( event ) {       
+            this.userData.selectPressed = false;       
+        }
+        
+        this.controllers = this.buildControllers( this.dolly );
+        // add event listeners to controllers
+        this.controllers.forEach( ( controller ) =>{
+            controller.addEventListener( 'selectstart', onSelectStart );
+            controller.addEventListener( 'selectend', onSelectEnd );
+        });
+        this.createUI();
+
+        // set up renderer
+        this.renderer.setAnimationLoop( this.render.bind(this) );   
+    }
+    
+    // Define controllers
+    buildControllers( parent = this.scene ){
+        const controllerModelFactory = new XRControllerModelFactory();
+
+        const geometry = new THREE.BufferGeometry().setFromPoints( [ new THREE.Vector3( 0, 0, 0 ), new THREE.Vector3( 0, 0, -1 ) ] );
+
+        const line = new THREE.Line( geometry );
+        line.scale.z = 0;
+        
+        const controllers = [];
+        
+        for(let i=0; i<=1; i++){
+            const controller = this.renderer.xr.getController( i );
+            controller.add( line.clone() );
+            controller.userData.selectPressed = false;
+            parent.add( controller );
+            controllers.push( controller );
             
-            if (self.reticle.visible){
-                if (self.knight.object.visible){
-                    self.workingVec3.setFromMatrixPosition( self.reticle.matrix );
-                    self.knight.newPath(self.workingVec3);
-                }else{
-                    self.knight.object.position.setFromMatrixPosition( self.reticle.matrix );
-                    self.knight.object.visible = true;
+            const grip = this.renderer.xr.getControllerGrip( i );
+            grip.add( controllerModelFactory.createControllerModel( grip ) );
+            parent.add( grip );
+        }
+        
+        return controllers;
+    }
+    
+    moveDolly(dt){
+       if (this.proxy === undefined) return;
+        
+        const wallLimit = 1.3;
+        const speed = 2;
+		let pos = this.dolly.position.clone();
+        pos.y += 1;
+        
+		let dir = new THREE.Vector3();
+        //Store original dolly rotation
+        const quaternion = this.dolly.quaternion.clone();
+        //Get rotation for movement from the headset pose
+        this.dolly.quaternion.copy( this.dummyCam.getWorldQuaternion() );
+		this.dolly.getWorldDirection(dir);
+        dir.negate();
+		this.raycaster.set(pos, dir);
+		
+        let blocked = false;
+		
+		let intersect = this.raycaster.intersectObject(this.proxy);
+        if (intersect.length>0){
+            if (intersect[0].distance < wallLimit) blocked = true;
+        }
+		
+		if (!blocked){
+            this.dolly.translateZ(-dt*speed);
+            pos = this.dolly.getWorldPosition( this.origin );
+		}
+
+        //Enter code here
+        //cast left
+        dir.set(-1,0,0);
+        dir.applyMatrix4(this.dolly.matrix);
+        dir.normalize();
+        this.raycaster.set(pos, dir);
+    
+        intersect = this.raycaster.intersectObject(this.proxy);
+        if (intersect.length>0){
+            if (intersect[0].distance<wallLimit) this.dolly.translateX(wallLimit-intersect[0].distance);
+        }
+    
+        //cast right
+        dir.set(1,0,0);
+        dir.applyMatrix4(this.dolly.matrix);
+        dir.normalize();
+        this.raycaster.set(pos, dir);
+    
+        intersect = this.raycaster.intersectObject(this.proxy);
+        if (intersect.length>0){
+            if (intersect[0].distance<wallLimit) this.dolly.translateX(intersect[0].distance-wallLimit);
+        }
+    
+        //cast down
+        dir.set(0,-1,0);
+        pos.y += 1.5;
+        this.raycaster.set(pos, dir);
+        
+        intersect = this.raycaster.intersectObject(this.proxy);
+        if (intersect.length>0){
+            this.dolly.position.copy( intersect[0].point );
+        }
+        
+        //Restore the original rotation
+        this.dolly.quaternion.copy( quaternion ); 
+	}
+
+    // return true if any of the controller trigger buttons are pressed
+    get selectPressed(){
+        return ( this.controllers !== undefined && (this.controllers[0].userData.selectPressed || this.controllers[1].userData.selectPressed) );    
+    }
+    
+    createUI()
+    {
+        const config = {
+            panelSize: { height: 0.5 },
+            height: 256,
+            name: { fontSize: 50, height: 70 },
+            info: { position:{ top: 70 }, backgroundColor: "#ccc", fontColor:"#000" }
+        };
+        
+        const content = {
+            name: "name",
+            info: "info"
+        };
+        
+        this.ui = new CanvasUI( content, config );
+        this.scene.add( this.ui.mesh );
+    }
+    
+    showInfoboard( name, obj, pos )
+    {
+        // Check if tha app property of ui exist
+        if (this.ui === undefined) return;
+        // update position of ui to position to the object we found, add 1.3 to y value
+        this.ui.position.copy(pos).add(this.workingVec3.set(0, 1.3, 0));
+        // get camera position
+        const camPos = this.dummyCam.getWorldPosition(this.workingVec3);
+        // set name and info values passed to obj parameters
+        this.ui.updateElement('name', obj.name);
+        this.ui.updateElement('info', obj.info);
+        // Update ui
+        this.ui.update();
+        // Insure ui is pointing towards the camera
+        this.ui.lookAt(camPos)
+        // make sure ui is visible
+        this.ui.visible = true;
+        // set name to avoid repeated calls to same object
+        this.boardShown = name;
+    }
+
+	render( timestamp, frame )
+    {
+        const dt = this.clock.getDelta();
+        
+        if (this.renderer.xr.isPresenting && this.selectPressed){
+            this.moveDolly(dt);
+
+            if (this.boardData) {
+                const scene = this.scene;
+                // store dolly position
+                const dollyPos = this.dolly.getWorldPosition(this.workingVec3);
+                let boardFound = false;
+                Object.entries(this.boardData).forEach(([name, info]) => {
+                    const obj = scene.getObjectByName(name);
+                    if (obj !== undefined) {
+                        const pos = obj.getWorldPosition(this.workingVec3b);
+                        if (dollyPos.distanceTo(pos) < 3) {
+                            boardFound = true;
+                            if (this.boardShown !== name) this.showInfoboard(name, info, pos);
+                        }
+                    }
+                });
+                if (!boardFound) {
+                    this.boardShown = "";
+                    this.ui.visible = false;
                 }
             }
         }
-
-        this.controller = this.renderer.xr.getController( 0 );
-        this.controller.addEventListener( 'select', onSelect );
         
-        this.scene.add( this.controller );    
-    }
-    
-    requestHitTestSource()
-    {
-        const self = this
-        const session = this.renderer.xr.getSession()
-        session.requestReferenceSpace('viewer').then(function(referenceSpace)
-        {
-            session.requestHitTestSource({space : referenceSpace}).then(function(source)
-            {
-                self.hitTestSource = source
-            })
-        })
-
-        session.addEventListener('end', function()
-        {
-            self.hitTestSourceRequested = false
-            self.hitTestSource = null
-            self.referenceSpace = null
-        })
-
-        self.hitTestSourceRequested = true
-    }
-    
-    getHitTestResults( frame )
-    {
-        const hitTestResults = frame.getHitTestResults(this.hitTestSource)
-        if(hitTestResults.length)
-        {
-            const referenceSpace = this.renderer.xr.getReferenceSpace()
-            const hit = hitTestResults[0]
-            const pose = hit.getPose(referenceSpace)
-
-            this.reticle.visible = true
-            this.reticle.matrix.fromArray(pose.transform.matrix)
-        }
-        else
-        {
-            this.reticle.visible = false
-        }
-    }
-
-    render( timestamp, frame ) {
-        const dt = this.clock.getDelta();
-        if (this.knight) this.knight.update(dt);
-
-        const self = this;
-        
-        if ( frame ) 
-        {
-
-            if ( this.hitTestSourceRequested === false ) this.requestHitTestSource( )
-
-            if ( this.hitTestSource ) this.getHitTestResults( frame );
-
-        }
-
-        this.renderer.render( this.scene, this.camera );
-    }
+        this.stats.update();
+		this.renderer.render(this.scene, this.camera);
+	}
 }
 
 export { App };
