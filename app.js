@@ -220,7 +220,8 @@ class App {
 
         this.ui = new CanvasUI( content, config );
         this.scene.add( this.ui.mesh );
-        
+
+        this.useGazeFunctionality = this.updateGamepadState();
         // set up renderer
         this.renderer.setAnimationLoop(this.render.bind(this));   
     }
@@ -411,7 +412,8 @@ class App {
 
         if (this.elapsedTime===undefined) this.elapsedTime = 0;
         this.elapsedTime += dt;
-        if (this.elapsedTime > 1){
+        
+        if (this.elapsedTime >= 1){
             this.useGazeFunctionality = this.updateGamepadState();
             this.elapsedTime = 0;
         }
