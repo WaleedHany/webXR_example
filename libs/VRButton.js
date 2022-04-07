@@ -49,7 +49,6 @@ class VRButton{
                 {
                     this.showEnterVR( button )
                     self.inputSources = navigator.xr.inputSources
-                    console.log("1" + self.inputSources)
                 }
                 else{
                     this.showWebXRNotFound( button );

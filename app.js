@@ -170,15 +170,15 @@ class App {
             {
                 const timeoutId = setTimeout(connectionTimeout, 2000);
                 const that = self
-                function onSelectStart(event) {
+                function onSelectStart() {
                     this.userData.selectPressed = true;
                 }
             
-                function onSelectEnd(event) {
+                function onSelectEnd() {
                     this.userData.selectPressed = false;
                 }
             
-                function onConnected(event) {
+                function onConnected() {
                     clearTimeout(timeoutId);
                 }
             
@@ -226,7 +226,12 @@ class App {
     }
 
     // Define controllers
-    buildControllers(parent = this.scene) {
+    buildControllers(parent = this.scene) 
+    {
+        // The XRControllerModelFactory will automatically fetch controller models
+		// that match what the user is holding as closely as possible. The models
+		// should be attached to the object returned from getControllerGrip in
+		// order to match the orientation of the held device.
         const controllerModelFactory = new XRControllerModelFactory();
 
         const geometry = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, -1)]);
@@ -411,11 +416,6 @@ class App {
             this.elapsedTime = 0;
         }
 
-        if (this.renderer.xr.isPresenting && this.selectPressed){
-            this.moveDolly(dt);
-            moved = true;
-        }
-
         if (this.joystick !== undefined){
             if (this.dolly.userData.forward !== undefined){
                 if (this.dolly.userData.forward != 0){
@@ -429,7 +429,6 @@ class App {
         if (this.renderer.xr.isPresenting ) {
             let moveGaze = false;
             if ( this.useGaze && this.gazeController!==undefined && this.useGazeFunctionality){
-                console.log("here")
                 this.gazeController.update();
                 moveGaze = (this.gazeController.mode == GazeController.Modes.MOVE);
             }
