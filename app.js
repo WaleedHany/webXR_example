@@ -4,8 +4,7 @@ import { DRACOLoader } from './libs/three/jsm/DRACOLoader.js';
 import { RGBELoader } from './libs/three/jsm/RGBELoader.js';
 import { Stats } from './libs/stats.module.js';
 import { LoadingBar } from './libs/LoadingBar.js';
-//import { VRButton } from './libs/VRButton.js';
-import { VRButton } from '../libs/three/VRButton.js';
+import { VRButton } from './libs/VRButton.js';
 import { CanvasUI } from './libs/CanvasUI.js';
 import { GazeController } from './libs/GazeController.js'
 import { JoyStick } from './libs/Toon3D.js';
@@ -170,7 +169,7 @@ class App {
             if (available)
             {
                 const timeoutId = setTimeout(connectionTimeout, 2000);
-
+                const that = self
                 function onSelectStart(event) {
                     this.userData.selectPressed = true;
                 }
@@ -184,19 +183,19 @@ class App {
                 }
             
                 function connectionTimeout() {
-                    self.useGaze = true;
-                    self.gazeController = new GazeController(self.scene, self.dummyCam);
+                    that.useGaze = true;
+                    that.gazeController = new GazeController(that.scene, that.dummyCam);
                 }
             
-                this.controllers = this.buildControllers(this.dolly);
+                self.controllers = self.buildControllers(self.dolly);
                 // add event listeners to controllers
-                this.controllers.forEach((controller) => {
+                self.controllers.forEach((controller) => {
                     controller.addEventListener('selectstart', onSelectStart);
                     controller.addEventListener('selectend', onSelectEnd);
                     controller.addEventListener('connected', onConnected);
                 });
 
-                this.createUI();
+                self.createUI();
             }
             else{
                 self.joystick = new JoyStick({
@@ -206,8 +205,8 @@ class App {
         }
 
         // define button an XR session
-        //const btn = VRButton.CreateButton(this.renderer, {vrStatus});
-        document.body.appendChild( VRButton.createButton( this.renderer ) )
+        const btn = new VRButton(this.renderer, {vrStatus});
+
         const config = {
             panelSize: { height: 0.5 },
             height: 256,
