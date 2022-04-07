@@ -221,7 +221,7 @@ class App {
         this.ui = new CanvasUI( content, config );
         this.scene.add( this.ui.mesh );
 
-        this.useGazeFunctionality = this.updateGamepadState();
+        this.useGaze = this.updateGamepadState();
         // set up renderer
         this.renderer.setAnimationLoop(this.render.bind(this));   
     }
@@ -414,7 +414,7 @@ class App {
         this.elapsedTime += dt;
         
         if (this.elapsedTime >= 1){
-            this.useGazeFunctionality = this.updateGamepadState();
+            this.useGaze = this.updateGamepadState();
             this.elapsedTime = 0;
         }
 
@@ -429,13 +429,16 @@ class App {
         }
 
         if (this.renderer.xr.isPresenting ) {
+            console.log("isPresenting")
             let moveGaze = false;
-            if ( this.useGaze && this.gazeController!==undefined && this.useGazeFunctionality){
+            console.log(this.useGaze)
+            if ( this.useGaze && this.gazeController!==undefined){                
                 this.gazeController.update();
                 moveGaze = (this.gazeController.mode == GazeController.Modes.MOVE);
             }
 
             if (this.selectPressed || moveGaze || moved) {
+                console.log("moves")
                 this.moveDolly(dt);
 
                 if (this.boardData) {
