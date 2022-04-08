@@ -4,7 +4,7 @@ import { DRACOLoader } from './libs/three/jsm/DRACOLoader.js';
 import { RGBELoader } from './libs/three/jsm/RGBELoader.js';
 import { Stats } from './libs/stats.module.js';
 import { LoadingBar } from './libs/LoadingBar.js';
-import { VRButton } from './libs/three/VRButton.js';
+import { VRButton } from './libs/VRButton.js';
 import { CanvasUI } from './libs/CanvasUI.js';
 import { GazeController } from './libs/GazeController.js'
 import { JoyStick } from './libs/Toon3D.js';
@@ -205,8 +205,7 @@ class App {
         }
 
         // define button an XR session
-        //const btn = new VRButton(this.renderer, {vrStatus});
-        document.body.appendChild( VRButton.createButton( this.renderer ) );
+        const btn = new VRButton(this.renderer, {vrStatus});
 
         const config = {
             panelSize: { height: 0.5 },
